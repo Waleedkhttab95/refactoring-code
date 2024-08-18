@@ -1,0 +1,44 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+
+#this strategy if we want to deploy the app as a docker container 
+# jobs:
+
+#   build:
+
+#     runs-on: self-hosted
+
+#     steps:
+#     - name: Pull Docker image
+#       run: sudo docker pull example/app-name:latest
+#     - name: Delete Old docker container
+#       run: sudo docker rm -f image-name || true
+#     - name: Delete Old docker image
+#       run: sudo docker rmi -f image-name locals360/backend:latest
+#     - name: Run Docker Container
+#       run: sudo docker-compose up -d --no-deps --build conainer-name
+
+#this strategy if we want to deploy the app to EC2 AWS server
+jobs:
+
+  build:
+
+    runs-on: self-hosted
+
+    steps:
+    - name: SSH Confg
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.pk }}
+    - name: Deploy
+      run: ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-public-dns << 'EOF'
+          cd /path/to/your/app
+          git pull origin main
+          npm install
+          pm2 reload all || pm2 start app.js --name your-app
+        EOF
